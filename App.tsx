@@ -12,6 +12,7 @@ import StackNavigator from './src/navigation/StackNavigator';
  * (pendiente, en progreso, completado).
  * 
  * ⚠️ NOTA IMPORTANTE:
+ 
  * Esta app utiliza useState y prop drilling INTENCIONALMENTE 
  * como antipráctica educativa. Más adelante se refactorizará 
  * para usar Redux/Redux Toolkit.
