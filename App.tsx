@@ -11,7 +11,6 @@ import StackNavigator from './src/navigation/StackNavigator';
  * App para organizar materias, tareas y estado de avance 
  * (pendiente, en progreso, completado).
  * 
- * ⚠️ NOTA IMPORTANTE:
  
  * Esta app utiliza useState y prop drilling INTENCIONALMENTE 
  * como antipráctica educativa. Más adelante se refactorizará 
