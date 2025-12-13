@@ -7,17 +7,13 @@ import {
   TouchableOpacity,
   Modal,
 } from 'react-native';
+import { useSelector, useDispatch } from 'react-redux';
+import { RootState } from '../store/store';
+import { addSubject } from '../store/subjectsSlice';
 import CustomInput from '../components/CustomInput';
 import CustomButton from '../components/CustomButton';
 import SubjectCard from '../components/SubjectCard';
-import { Subject, Task } from '../services/dummyData';
-
-interface SubjectsScreenProps {
-  // TODO: Subjects debería ser una fuente de verdad global compartida (Redux slice subjects).
-  subjects: Subject[];
-  setSubjects: React.Dispatch<React.SetStateAction<Subject[]>>;
-  tasks: Task[];
-}
+import { Subject } from '../services/dummyData';
 
 const COLORS = [
   '#4f46e5', // Indigo
@@ -30,14 +26,15 @@ const COLORS = [
   '#f59e0b', // Amber
 ];
 
-function SubjectsScreen({
-  subjects,
-  setSubjects,
-  tasks,
-}: SubjectsScreenProps) {
+function SubjectsScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [newSubjectName, setNewSubjectName] = useState('');
   const [selectedColor, setSelectedColor] = useState(COLORS[0]);
+
+  // 🔹 Redux
+  const subjects = useSelector((state: RootState) => state.subjects.subjects);
+  const tasks = useSelector((state: RootState) => state.tasks.tasks);
+  const dispatch = useDispatch();
 
   // Contar tareas por materia
   function getTaskCountForSubject(subjectId: string): number {
@@ -56,7 +53,8 @@ function SubjectsScreen({
       color: selectedColor,
     };
 
-    setSubjects((prev) => [...prev, newSubject]);
+    dispatch(addSubject(newSubject));
+
     setNewSubjectName('');
     setSelectedColor(COLORS[0]);
     setModalVisible(false);
@@ -77,7 +75,8 @@ function SubjectsScreen({
       <View style={styles.header}>
         <Text style={styles.title}>Materias</Text>
         <Text style={styles.subtitle}>
-          {subjects.length} {subjects.length === 1 ? 'materia' : 'materias'} registradas
+          {subjects.length}{' '}
+          {subjects.length === 1 ? 'materia' : 'materias'} registradas
         </Text>
       </View>
 
@@ -111,7 +110,7 @@ function SubjectsScreen({
       <Modal
         visible={modalVisible}
         animationType="slide"
-        transparent={true}
+        transparent
         onRequestClose={() => setModalVisible(false)}
       >
         <View style={styles.modalOverlay}>

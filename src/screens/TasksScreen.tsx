@@ -8,28 +8,29 @@ import {
   Modal,
   ScrollView,
 } from 'react-native';
+import { useSelector, useDispatch } from 'react-redux';
+import { RootState } from '../store/store';
+import { addTask, updateTaskStatus } from '../store/tasksSlice';
+import { setStatusFilter, setSubjectFilter } from '../store/filtersSlice';
 import CustomInput from '../components/CustomInput';
 import CustomButton from '../components/CustomButton';
 import TaskCard from '../components/TaskCard';
-import FilterChips, { FilterOption } from '../components/FilterChips';
+import FilterChips from '../components/FilterChips';
 import { Task, Subject, TaskStatus } from '../services/dummyData';
 
-interface TasksScreenProps {
-  subjects: Subject[];
-  tasks: Task[];
-  setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
-}
+function TasksScreen() {
+  // 🔹 Redux
+  const subjects = useSelector((state: RootState) => state.subjects.subjects);
+  const tasks = useSelector((state: RootState) => state.tasks.tasks);
+  const statusFilter = useSelector(
+    (state: RootState) => state.filters.statusFilter
+  );
+  const subjectFilter = useSelector(
+    (state: RootState) => state.filters.subjectFilter
+  );
+  const dispatch = useDispatch();
 
-function TasksScreen({
-  subjects,
-  tasks,
-  setTasks,
-}: TasksScreenProps) {
-  // TODO: Unificar lógica de filtros en un solo lugar usando Redux (slice filters).
-  // ANTIPRÁCTICA: Estos filtros son independientes de los de DashboardScreen
-  const [statusFilter, setStatusFilter] = useState<FilterOption>('all');
-  const [subjectFilter, setSubjectFilter] = useState<string>('all');
-
+  // Estado local SOLO para el formulario
   const [modalVisible, setModalVisible] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskDescription, setNewTaskDescription] = useState('');
@@ -40,18 +41,18 @@ function TasksScreen({
   const filteredTasks = useMemo(() => {
     let result = [...tasks];
 
-    // Filtrar por estado
     if (statusFilter !== 'all') {
       result = result.filter((t) => t.status === statusFilter);
     }
 
-    // Filtrar por materia
     if (subjectFilter !== 'all') {
       result = result.filter((t) => t.subjectId === subjectFilter);
     }
 
-    // Ordenar por fecha
-    result.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+    result.sort(
+      (a, b) =>
+        new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+    );
 
     return result;
   }, [tasks, statusFilter, subjectFilter]);
@@ -63,11 +64,7 @@ function TasksScreen({
 
   // Cambiar estado de tarea
   function handleChangeStatus(taskId: string, newStatus: TaskStatus) {
-    setTasks((prev) =>
-      prev.map((task) =>
-        task.id === taskId ? { ...task, status: newStatus } : task
-      )
-    );
+    dispatch(updateTaskStatus({ id: taskId, status: newStatus }));
   }
 
   // Agregar nueva tarea
@@ -85,7 +82,7 @@ function TasksScreen({
       status: 'pending',
     };
 
-    setTasks((prev) => [...prev, newTask]);
+    dispatch(addTask(newTask));
     resetForm();
     setModalVisible(false);
   }
@@ -122,7 +119,7 @@ function TasksScreen({
         <Text style={styles.filterLabel}>Por estado:</Text>
         <FilterChips
           selectedFilter={statusFilter}
-          onFilterChange={setStatusFilter}
+          onFilterChange={(filter) => dispatch(setStatusFilter(filter))}
         />
       </View>
 
@@ -135,34 +132,41 @@ function TasksScreen({
               styles.subjectChip,
               subjectFilter === 'all' && styles.subjectChipSelected,
             ]}
-            onPress={() => setSubjectFilter('all')}
+            onPress={() => dispatch(setSubjectFilter('all'))}
           >
             <Text
               style={[
                 styles.subjectChipText,
-                subjectFilter === 'all' && styles.subjectChipTextSelected,
+                subjectFilter === 'all' &&
+                  styles.subjectChipTextSelected,
               ]}
             >
               Todas
             </Text>
           </TouchableOpacity>
+
           {subjects.map((subject) => (
             <TouchableOpacity
               key={subject.id}
               style={[
                 styles.subjectChip,
-                subjectFilter === subject.id && styles.subjectChipSelected,
+                subjectFilter === subject.id &&
+                  styles.subjectChipSelected,
                 { borderColor: subject.color },
               ]}
-              onPress={() => setSubjectFilter(subject.id)}
+              onPress={() => dispatch(setSubjectFilter(subject.id))}
             >
               <View
-                style={[styles.subjectDot, { backgroundColor: subject.color }]}
+                style={[
+                  styles.subjectDot,
+                  { backgroundColor: subject.color },
+                ]}
               />
               <Text
                 style={[
                   styles.subjectChipText,
-                  subjectFilter === subject.id && styles.subjectChipTextSelected,
+                  subjectFilter === subject.id &&
+                    styles.subjectChipTextSelected,
                 ]}
               >
                 {subject.name}
@@ -182,7 +186,9 @@ function TasksScreen({
         ListEmptyComponent={
           <View style={styles.emptyState}>
             <Text style={styles.emptyIcon}>✅</Text>
-            <Text style={styles.emptyText}>No hay tareas con estos filtros</Text>
+            <Text style={styles.emptyText}>
+              No hay tareas con estos filtros
+            </Text>
             <Text style={styles.emptyHint}>
               Intenta cambiar los filtros o agregar una nueva tarea
             </Text>
@@ -202,7 +208,7 @@ function TasksScreen({
       <Modal
         visible={modalVisible}
         animationType="slide"
-        transparent={true}
+        transparent
         onRequestClose={() => setModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
@@ -253,7 +259,9 @@ function TasksScreen({
                         { backgroundColor: subject.color },
                       ]}
                     />
-                    <Text style={styles.subjectOptionText}>{subject.name}</Text>
+                    <Text style={styles.subjectOptionText}>
+                      {subject.name}
+                    </Text>
                   </TouchableOpacity>
                 ))}
               </View>

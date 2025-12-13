@@ -6,9 +6,13 @@ import {
   ScrollView,
 } from 'react-native';
 import { RouteProp } from '@react-navigation/native';
+import { useSelector, useDispatch } from 'react-redux';
+import { RootState } from '../store/store';
+import { updateTaskStatus } from '../store/tasksSlice';
+import { setStatusFilter } from '../store/filtersSlice';
 import TaskCard from '../components/TaskCard';
-import FilterChips, { FilterOption } from '../components/FilterChips';
-import { Task, Subject, TaskStatus } from '../services/dummyData';
+import FilterChips from '../components/FilterChips';
+import { Subject, TaskStatus } from '../services/dummyData';
 
 type TabParamList = {
   Dashboard: undefined;
@@ -20,22 +24,17 @@ type TabParamList = {
 interface DashboardScreenProps {
   route: RouteProp<TabParamList, 'Dashboard'>;
   userName: string;
-  // TODO: Este estado debería moverse a un store global (Redux) para evitar prop drilling.
-  subjects: Subject[];
-  tasks: Task[];
-  setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
-  activeStatusFilter: FilterOption;
-  setActiveStatusFilter: React.Dispatch<React.SetStateAction<FilterOption>>;
 }
 
-function DashboardScreen({
-  userName,
-  subjects,
-  tasks,
-  setTasks,
-  activeStatusFilter,
-  setActiveStatusFilter,
-}: DashboardScreenProps) {
+function DashboardScreen({ userName }: DashboardScreenProps) {
+  // 🔹 Redux
+  const subjects = useSelector((state: RootState) => state.subjects.subjects);
+  const tasks = useSelector((state: RootState) => state.tasks.tasks);
+  const activeStatusFilter = useSelector(
+    (state: RootState) => state.filters.statusFilter
+  );
+  const dispatch = useDispatch();
+
   // Calcular estadísticas
   const stats = useMemo(() => {
     const total = tasks.length;
@@ -48,23 +47,23 @@ function DashboardScreen({
   // Filtrar tareas según el filtro activo
   const filteredTasks = useMemo(() => {
     let result = [...tasks];
-    
+
     if (activeStatusFilter !== 'all') {
       result = result.filter((t) => t.status === activeStatusFilter);
     }
 
     // Ordenar por fecha y tomar las 3 más próximas
-    result.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+    result.sort(
+      (a, b) =>
+        new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+    );
+
     return result.slice(0, 3);
   }, [tasks, activeStatusFilter]);
 
   // Cambiar estado de una tarea
   function handleChangeStatus(taskId: string, newStatus: TaskStatus) {
-    setTasks((prevTasks) =>
-      prevTasks.map((task) =>
-        task.id === taskId ? { ...task, status: newStatus } : task
-      )
-    );
+    dispatch(updateTaskStatus({ id: taskId, status: newStatus }));
   }
 
   // Obtener la materia de una tarea
@@ -108,15 +107,17 @@ function DashboardScreen({
           <Text style={styles.sectionTitle}>Filtrar por estado</Text>
           <FilterChips
             selectedFilter={activeStatusFilter}
-            onFilterChange={setActiveStatusFilter}
+            onFilterChange={(filter) => dispatch(setStatusFilter(filter))}
           />
         </View>
 
         {/* Tareas próximas */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            Próximas tareas {activeStatusFilter !== 'all' && `(${activeStatusFilter})`}
+            Próximas tareas{' '}
+            {activeStatusFilter !== 'all' && `(${activeStatusFilter})`}
           </Text>
+
           {filteredTasks.length > 0 ? (
             filteredTasks.map((task) => (
               <TaskCard
@@ -137,15 +138,30 @@ function DashboardScreen({
 
         {/* Info de materias */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Tus materias ({subjects.length})</Text>
+          <Text style={styles.sectionTitle}>
+            Tus materias ({subjects.length})
+          </Text>
           <View style={styles.subjectsRow}>
             {subjects.map((subject) => (
               <View
                 key={subject.id}
-                style={[styles.subjectChip, { backgroundColor: subject.color + '20' }]}
+                style={[
+                  styles.subjectChip,
+                  { backgroundColor: subject.color + '20' },
+                ]}
               >
-                <View style={[styles.subjectDot, { backgroundColor: subject.color }]} />
-                <Text style={[styles.subjectName, { color: subject.color }]}>
+                <View
+                  style={[
+                    styles.subjectDot,
+                    { backgroundColor: subject.color },
+                  ]}
+                />
+                <Text
+                  style={[
+                    styles.subjectName,
+                    { color: subject.color },
+                  ]}
+                >
                   {subject.name}
                 </Text>
               </View>

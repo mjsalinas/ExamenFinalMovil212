@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Text, StyleSheet } from 'react-native';
 import { RouteProp } from '@react-navigation/native';
@@ -7,13 +7,6 @@ import DashboardScreen from '../screens/DashboardScreen';
 import SubjectsScreen from '../screens/SubjectsScreen';
 import TasksScreen from '../screens/TasksScreen';
 import SettingsScreen from '../screens/SettingsScreen';
-import { 
-  initialSubjects, 
-  initialTasks, 
-  Subject, 
-  Task 
-} from '../services/dummyData';
-import { FilterOption } from '../components/FilterChips';
 
 export type TabParamList = {
   Dashboard: undefined;
@@ -33,14 +26,8 @@ interface TabsNavigatorProps {
   route: RouteProp<RootStackParamList, 'Tabs'>;
 }
 
-// TODO: Este estado debería moverse a un store global (Redux) para evitar prop drilling.
 function TabsNavigator({ route }: TabsNavigatorProps) {
   const { userName } = route.params;
-
-  // Estado centralizado de materias y tareas (ANTIPRÁCTICA: debería estar en Redux)
-  const [subjects, setSubjects] = useState<Subject[]>(initialSubjects);
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
-  const [activeStatusFilter, setActiveStatusFilter] = useState<FilterOption>('all');
 
   return (
     <Tab.Navigator
@@ -52,7 +39,7 @@ function TabsNavigator({ route }: TabsNavigatorProps) {
         tabBarLabelStyle: styles.tabBarLabel,
         tabBarIcon: ({ focused }) => {
           let icon = '';
-          
+
           switch (route.name) {
             case 'Dashboard':
               icon = '🏠';
@@ -67,57 +54,40 @@ function TabsNavigator({ route }: TabsNavigatorProps) {
               icon = '⚙️';
               break;
           }
-          
-          return <Text style={[styles.tabIcon, { opacity: focused ? 1 : 0.6 }]}>{icon}</Text>;
+
+          return (
+            <Text style={[styles.tabIcon, { opacity: focused ? 1 : 0.6 }]}>
+              {icon}
+            </Text>
+          );
         },
       })}
     >
-      <Tab.Screen 
-        name="Dashboard" 
+      <Tab.Screen
+        name="Dashboard"
         options={{ tabBarLabel: 'Inicio' }}
       >
         {(props) => (
           <DashboardScreen
             {...props}
             userName={userName}
-            subjects={subjects}
-            tasks={tasks}
-            setTasks={setTasks}
-            activeStatusFilter={activeStatusFilter}
-            setActiveStatusFilter={setActiveStatusFilter}
           />
         )}
       </Tab.Screen>
 
-      <Tab.Screen 
+      <Tab.Screen
         name="Subjects"
         options={{ tabBarLabel: 'Materias' }}
-      >
-        {(props) => (
-          <SubjectsScreen
-            {...props}
-            subjects={subjects}
-            setSubjects={setSubjects}
-            tasks={tasks}
-          />
-        )}
-      </Tab.Screen>
+        component={SubjectsScreen}
+      />
 
-      <Tab.Screen 
+      <Tab.Screen
         name="Tasks"
         options={{ tabBarLabel: 'Tareas' }}
-      >
-        {(props) => (
-          <TasksScreen
-            {...props}
-            subjects={subjects}
-            tasks={tasks}
-            setTasks={setTasks}
-          />
-        )}
-      </Tab.Screen>
+        component={TasksScreen}
+      />
 
-      <Tab.Screen 
+      <Tab.Screen
         name="Settings"
         options={{ tabBarLabel: 'Ajustes' }}
       >
